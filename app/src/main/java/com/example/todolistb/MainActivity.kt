@@ -51,21 +51,18 @@ fun GreetingPreview() {
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todolistb.settings.SettingsViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.todolistb.AddTaskScreen
 import com.example.todolistb.Routes
-import com.example.todolistb.TaskListScreen
-import com.example.todolistb.TaskViewModel
+import com.example.todolistb.notes.NoteListScreen
+import com.example.todolistb.notes.AddOrEditNoteScreen
+import com.example.todolistb.notes.NotaViewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.navArgument
 import com.example.todolistb.ui.theme.TodoListBTheme // Usa el theme que creó tu plantilla; ajusta el import
 
 class MainActivity : ComponentActivity() {
@@ -76,35 +73,66 @@ class MainActivity : ComponentActivity() {
             val settingsState = settingsVm.state.collectAsState()
             TodoListBTheme(darkTheme = settingsState.value.darkTheme) {
                 val nav = rememberNavController()
-                val vm: TaskViewModel = viewModel()
-                NavHost(navController = nav, startDestination = if (settingsState.value.hasUsername) Routes.LIST else Routes.WELCOME) {
+                val notaVm: NotaViewModel = viewModel()
+                NavHost(navController = nav, startDestination = if (settingsState.value.hasUsername) Routes.NOTES_LIST else Routes.WELCOME) {
                     composable(Routes.WELCOME) {
                         com.example.todolistb.ui.welcome.WelcomeScreen(
                             settingsState = settingsState.value,
                             onSave = { name, dark ->
                                 settingsVm.updateUsername(name)
                                 settingsVm.updateTheme(dark)
-                                nav.navigate(Routes.LIST) {
+                                nav.navigate(Routes.NOTES_LIST) {
                                     popUpTo(Routes.WELCOME) { inclusive = true }
                                 }
                             }
                         )
                     }
-                    composable(Routes.LIST) {
-                        TaskListScreen(
-                            tasks = vm.tasks,
-                            onToggle = { id, checked -> vm.toggleTaskDone(id, checked) },
-                            onAddClick = { nav.navigate(Routes.ADD) }
+                    composable(Routes.NOTES_LIST) {
+                        val notas by notaVm.notas.collectAsState()
+                        val contador by notaVm.contador.collectAsState()
+                        NoteListScreen(
+                            notas = notas,
+                            contador = contador,
+                            onAddClick = { nav.navigate(Routes.NOTE_ADD) },
+                            onOpen = { nota -> nav.navigate(Routes.NOTE_EDIT + "/${nota.id}") },
+                            onDelete = { notaVm.eliminar(it) },
+                            onFilterCategoria = { cat -> notaVm.setCategoriaFiltro(cat) },
+                            onSearch = { q -> notaVm.setQuery(q) }
                         )
                     }
-                    composable(Routes.ADD) {
-                        AddTaskScreen(
-                            onSave = { title, desc ->
-                                vm.addTask(title, desc)
+                    composable(Routes.NOTE_ADD) {
+                        AddOrEditNoteScreen(
+                            onSave = { t, c, cat, col ->
+                                notaVm.crear(t, c, cat, col)
                                 nav.popBackStack()
                             },
                             onCancel = { nav.popBackStack() }
                         )
+                    }
+                    composable(
+                        route = Routes.NOTE_EDIT + "/{id}",
+                        arguments = listOf(navArgument("id") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getInt("id") ?: -1
+                        val notaState = notaVm.getNota(id).collectAsState(initial = null)
+                        val nota = notaState.value
+                        if (nota != null) {
+                            AddOrEditNoteScreen(
+                                nota = nota,
+                                onSave = { t, c, cat, col ->
+                                    notaVm.actualizar(nota, t, c, cat, col)
+                                    nav.popBackStack()
+                                },
+                                onCancel = { nav.popBackStack() },
+                                onDelete = {
+                                    notaVm.eliminar(nota)
+                                    nav.popBackStack()
+                                }
+                            )
+                        } else {
+                            // Podrías mostrar un indicador de carga o mensaje de error
+                            androidx.compose.material3.CircularProgressIndicator()
+                        }
                     }
                 }
             }

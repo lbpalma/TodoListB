@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // kapt para Room annotation processor
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -65,5 +67,9 @@ dependencies {
     implementation(libs.androidx.compose.material.icons)
     // DataStore Preferences para guardar nombre y tema
     implementation(libs.androidx.datastore.preferences)
+    // Room Database
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    kapt(libs.room.compiler)
 
 }
