@@ -52,6 +52,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todolistb.settings.SettingsViewModel
 import androidx.navigation.compose.NavHost
@@ -62,7 +63,7 @@ import com.example.todolistb.notes.NoteListScreen
 import com.example.todolistb.notes.AddOrEditNoteScreen
 import com.example.todolistb.notes.NotaViewModel
 import androidx.navigation.NavType
-import androidx.navigation.compose.navArgument
+import androidx.navigation.navArgument
 import com.example.todolistb.ui.theme.TodoListBTheme // Usa el theme que creó tu plantilla; ajusta el import
 
 class MainActivity : ComponentActivity() {
